@@ -1,5 +1,5 @@
 import operator
-
+print("Hello world")
 def get_op(op, a, b):
     '''
     Get op as a function of a and b by using a symbol
@@ -14,13 +14,16 @@ def get_op(op, a, b):
         return ops[op](a,b)
     except TypeError:  # if a or b is None (deleted record), python3 raises typerror
         return False
-
+   
+   
+   
 def split_condition(condition):
     ops = {'>=': operator.ge,
            '<=': operator.le,
            '=': operator.eq,
            '>': operator.gt,
-           '<': operator.lt}
+           '<': operator.lt
+           }
 
     for op_key in ops.keys():
         splt=condition.split(op_key)
