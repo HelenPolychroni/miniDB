@@ -16,6 +16,7 @@ from btree import Btree
 from misc import split_condition
 from misc import split_not_condition
 from table import Table
+from hash import Hash
 
 
 # readline.clear_history()
@@ -738,32 +739,54 @@ class Database:
         '''
         self.tables['meta_insert_stack']._update_rows(new_stack, 'indexes', f'table_name={table_name}')
 
-
-    # indexes
-    def create_index(self, index_name, table_name, index_type='btree'):
+# indexes
+    def create_index(self, index_name, table_name, column_name, index_type):
         '''
         Creates an index on a specified table with a given name.
-        Important: An index can only be created on a primary key (the user does not specify the column).
-
+        The index is created over a primary key or over a unique column
+        (the user has to specify the column).
+            
         Args:
-            table_name: string. Table name (must be part of database).
             index_name: string. Name of the created index.
+            table_name: string with the following format: 
+                        TableName 'column' columnName index_type 
+                        IMPORTANT: The TableName (must be part of database)
+            column_name: string. Name of the column where the index is created over (must be part of database).  
+       
         '''
-        if (self.tables[table_name].pk_idx is None and self.tables[table_name].unique_cols_idx is None): # if no primary key, no index
-            raise Exception('Cannot create index. Table has no primary key or unique columns.')
-        if index_name not in self.tables['meta_indexes'].column_by_name('index_name'):
+        if (column_name != None): # look 4 unique columns 
+            print("case: look 4 pk or 4 unique  column")
+            #print(self.tables[table_name].pk)
+            if (column_name != self.tables[table_name].pk):
+                print("case: search 4 unique column")
+                
+                if (column_name not in self.tables[table_name].unique):
+                    raise Exception('Cannot create index. The column you specified is not unique.')
+                
+            if index_name not in self.tables['meta_indexes'].column_by_name('index_name'):
             # currently only btree is supported. This can be changed by adding another if.
-            if index_type=='btree':
-                logging.info('Creating Btree index.')
-                # insert a record with the name of the index and the table on which it's created to the meta_indexes table
-                self.tables['meta_indexes']._insert([table_name, self.tables[table_name].pk , index_name])
-                # crate the actual index
-                self._construct_index(table_name, index_name)
-                self.save_database()
+                if index_type == 'btree': # case1 : index btree
+                    logging.info('Creating Btree index.')
+                    # insert a record with the name of the index and the table on which it's created to the meta_indexes table
+                    self.tables['meta_indexes']._insert([table_name, column_name , index_name])
+                    # crate the actual index
+                    self._construct_index(table_name, column_name, index_name)
+                    self.save_database()        
+                elif index_type=='hashing':
+                 logging.info('Creating hash index. ')
+                 self.tables['meta_indexes']._insert([table_name,column_name,index_name])
+                 self._construct_hash_index(table_name,column_name,index_name)
+                 self.save_database()
+            else:
+                raise Exception('Cannot create index. Another index with the same name already exists.')
         else:
-            raise Exception('Cannot create index. Another index with the same name already exists.')
+            raise Exception('Cannot create index. You have to specify the column first.')
+        
+        
+    
 
-    def _construct_index(self, table_name, index_name):
+
+    def _construct_index(self, table_name,column_name, index_name):
         '''
         Construct a btree on a table and save.
 
@@ -774,12 +797,25 @@ class Database:
         bt = Btree(3) # 3 is arbitrary
 
         # for each record in the primary key of the table, insert its value and index to the btree
-        for idx, key in enumerate(self.tables[table_name].column_by_name(self.tables[table_name].pk)):
+        for idx, key in enumerate(self.tables[table_name].column_by_name(column_name)):
             if key is None:
                 continue
             bt.insert(key, idx)
         # save the btree
         self._save_index(index_name, bt)
+    
+    def _construct_hash_index(self,table_name,column_name,index_name): #table_column
+        '''
+        
+        '''
+        m=Hash()
+        for idx, key in enumerate(self.tables[table_name].column_by_name(column_name)):
+            if key is None:
+                continue
+            m.insert(key, idx)
+            m.get_hash_index(key)
+        self._save_index(index_name,m) 
+        print('M is:',m)
 
 
     def _has_index(self, table_name):
