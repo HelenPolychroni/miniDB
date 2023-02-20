@@ -7,33 +7,13 @@ class Hash:
      bucket2=Bucket(bucket=[],ld=1)
      self.data={'0':bucket1,'1':bucket2}
 
-    def find(self,operator,value):
-
-      rows = []
-      for key in self.data: # in each key
-        for k,ind in self.data[key].bucket: # in each bucket
-          if operator == '=':
-            if k == value:
-              rows.append(ind)
-          elif operator == '>':
-            if k > value:
-              rows.append(ind)
-          elif operator == '>=':
-            if k >= value:
-              rows.append(ind)
-          elif operator == '<':
-            if k < value:
-              rows.append(ind)
-          elif operator == '<=':
-            if k <= value:
-              rows.append(ind)
-
-      #remove duplicates first
-      rows = list(dict.fromkeys(rows))
-      return rows
-
-
+ 
     def get_hash_index(self,key):
+      '''
+       Hash function.Returns the hashed value.
+
+       key:The key used for placing the tuple in the correct bucket according to a hash function.
+      '''
       if type(key)==int:
         h=key
       elif type(key)==float:
@@ -55,7 +35,7 @@ class Hash:
       '''
         Insert the key and its value(pointer) to the appropriate bucket.
         Args:
-            key:The key used for placing the tuple to the correct bucket.
+            key:The key used for placing the tuple in the correct bucket.
             value: int. The ptr of the inserted value (e.g. its index).
       '''
       hash_key = str(self.get_hash_index(key))
@@ -80,7 +60,7 @@ class Hash:
       local depth is less than the global depth then only rehashing of the bucket and increment by of the local depth occur.
 
       Args:
-        key:The key used for placing the tuple to the correct tuple.
+        key:The key used for placing the tuple in the correct bucket.
         hash_key:str.The hashed key where the bucket overflow occurs.
         value: int. The ptr of the inserted value (e.g. its index).
 
@@ -133,12 +113,44 @@ class Hash:
         Places the tuples in the correct bucket.
 
         Args:
-         list1:list.Contains the tuples that need to be placed in the correct bucket
+         list1:list.Contains the tuples that need to be placed in the correct bucket.
       '''
       for key,value in(list1):
         hash_key = str(self.get_hash_index(key))
         if len(self.data[hash_key].bucket)<self.capacity and ((key,value)) not in (self.data[hash_key].bucket):
          self.data[hash_key].bucket.append((key,value))
+    
+    
+    def find(self,operator,value):
+      '''
+        Returns a list that contains indexes which point to the rows of the table where the condition is true. 
+
+        operator: string. The provided evaluation operator.
+        value: int. The value being searched for.
+
+      '''
+      rows = []
+      for key in self.data: # in each key
+        for k,ind in self.data[key].bucket: # in each bucket
+          if operator == '=':
+            if k == value:
+              rows.append(ind)
+          elif operator == '>':
+            if k > value:
+              rows.append(ind)
+          elif operator == '>=':
+            if k >= value:
+              rows.append(ind)
+          elif operator == '<':
+            if k < value:
+              rows.append(ind)
+          elif operator == '<=':
+            if k <= value:
+              rows.append(ind)
+
+      #remove duplicates first
+      rows = list(dict.fromkeys(rows))
+      return rows
 
     def show(self):
         '''
